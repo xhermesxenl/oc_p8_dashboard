@@ -3,7 +3,7 @@ import streamlit as st
 def create_sidebar():
 
     # Titre de l'application
-    st.sidebar.image("../logo.png", caption='logo', use_column_width=True)
+    # st.sidebar.image("../logo.png", caption='logo', use_column_width=True)
     st.title("Prédiction du Risque de Non-Remboursement")
 
     st.sidebar.title("Saisir un numéro de client")
