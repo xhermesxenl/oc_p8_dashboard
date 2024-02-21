@@ -23,7 +23,8 @@ st.set_option('deprecation.showPyplotGlobalUse', False)
 seuil = 0.48
 couleur_accepte = "#3B782F"
 couleur_refuse = "#B82010"
-url = f"https://ocp7-dc846df71c5b.herokuapp.com/api/predict/"
+#url = f"https://ocp7-dc846df71c5b.herokuapp.com/api/predict/"
+url = f"https://ocp8api-c762537c6d53.herokuapp.com"
 #url = f"http://127.0.0.1:5000"
 
 
