@@ -209,9 +209,9 @@ if pressed:
                 st.markdown(f"**{key}:** {value}")
 
     elif response.status_code == 404:
-        st.alert("ID inconnu.")
+        st.warning("ID inconnu.")
     else:
-        st.alert("Erreur lors de la requête à l'API.")
+        st.warning("Erreur lors de la requête à l'API.")
 
 if option_1:
     if 'client_id' in st.session_state:
