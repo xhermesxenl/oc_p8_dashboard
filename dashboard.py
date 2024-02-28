@@ -6,9 +6,9 @@ import plotly.graph_objects as go
 import pandas as pd
 import shap
 import numpy as np
-import json
 import seaborn as sns
 
+from aide_texte import aide_comparaison_impact, aide_comparaison_bi, afficher_infos_client, afficher_infos_local, afficher_infos_global
 from sidebar import create_sidebar
 
 # Configuration de la page
@@ -24,13 +24,13 @@ seuil = 0.48
 couleur_accepte = "#3B782F"
 couleur_refuse = "#B82010"
 #url = f"https://ocp7-dc846df71c5b.herokuapp.com/api/predict/"
-url = f"https://ocp8api-c762537c6d53.herokuapp.com"
-#url = f"http://127.0.0.1:5000"
+#url = f"https://ocp8api-c762537c6d53.herokuapp.com"
+url = f"http://127.0.0.1:5000"
 
 
-        ###############################
-        ###      GESTION STATE      ###
-        ###############################
+###############################
+###      GESTION STATE      ###
+###############################
 
 if 'client_id' not in st.session_state:
     st.session_state.client_id = ''
@@ -49,8 +49,6 @@ def update_state(key, value):
     #######################
     ###      Jauge      ###
     #######################
-
-
 def create_gauge_chart(score, decision, threshold=seuil, couleur_accepte=couleur_accepte,
                        couleur_refuse=couleur_refuse):
     # Configuration de la jauge avec les intervalles et couleurs spécifiques
@@ -73,63 +71,54 @@ def create_gauge_chart(score, decision, threshold=seuil, couleur_accepte=couleur
     return gauge
 
     ##############################################
-    ###         Aide Describe Client           ###
+    ###         Feature Global                 ###
     ##############################################
-def afficher_infos_client():
-    html_template = """
-    <div style="background-color:lightblue; padding:10px; border-radius:10px">
-    <h2>Informations Client</h2>
+def display_shap_plot(shap_values, expected_value, feature_names, title, nb_features):
+        expl = shap.Explanation(values=np.array(shap_values).reshape(1, -1),
+                                base_values=expected_value,
+                                feature_names=feature_names)
+        shap.plots.waterfall(expl[0], max_display=nb_features, show=False)
+        plt.title(title)
+        st.pyplot(bbox_inches='tight', clear_figure=True)
 
-    <p><strong>SK_ID_CURR</strong>: Identifiant unique du client. Sert de clé primaire pour identifier les enregistrements de clients de manière unique.</p>
 
-    <p><strong>NAME_CONTRACT_TYPE</strong>: Type de contrat de crédit. Indique le type de prêt contracté par le client, par exemple, prêt à la consommation ou prêt immobilier.</p>
-
-    <p><strong>CODE_GENDER</strong>: Genre du client. Le sexe du client, généralement indiqué par 'M' pour masculin et 'F' pour féminin.</p>
-
-    <p><strong>CNT_CHILDREN</strong>: Nombre d'enfants. Le nombre total d'enfants que le client a.</p>
-
-    <p><strong>AMT_INCOME_TOTAL</strong>: Revenu total annuel. Le revenu annuel total du client.</p>
-
-    <p><strong>DAYS_BIRTH</strong>: Âge du client (en jours). L'âge du client, calculé en jours à partir de la date de naissance jusqu'à la date de la demande de prêt.</p>
-
-    <p><strong>DAYS_EMPLOYED</strong>: Durée de l'emploi (en jours). Le nombre de jours depuis le début de l'emploi actuel du client.</p>
-
-    </div>
-    """
-    st.markdown(html_template, unsafe_allow_html=True)
 
 
     ##############################################
     ###         Comparaison Groupe Client      ###
     ##############################################
-def visualize_client_comparison(df, client_id, features, approval_status):
+def visualize_client_comparison(df, client_id, features, etat_approbation):
 
-    # Transformation des données pour le graphique
-    melted_data = df.melt(id_vars=['TARGET'], value_vars=features, var_name="Features", value_name="Normalized Values")
+    # Préparation des données pour la visualisation
+    donnees_fusionnees = df.melt(id_vars='TARGET', value_vars=features,
+                                 var_name='Caractéristique', value_name='Valeur')
 
-    # Création du graphique
-    fig, ax = plt.subplots(figsize=(12, 8))
-    sns.boxplot(data=melted_data, x='Features', y='Normalized Values', hue='TARGET', linewidth=1, showfliers=False,
-                width=0.4, palette=['tab:green', 'tab:red'], saturation=0.5, ax=ax)
-    ax.set_xlabel('')
-    ax.set_ylabel("Valeurs Normalisées", fontsize=15)
+    # Création de la figure et de l'axe
+    plt.figure(figsize=(15, 10))
+    ax = sns.boxplot(data=donnees_fusionnees, x='Caractéristique', y='Valeur', hue='TARGET',
+                     palette='coolwarm', fliersize=0, width=0.5)
 
-    # Extraction des données du client sélectionné
-    client_data = df.loc[client_id][features].to_frame().reset_index()
-    client_data_renamed = client_data.rename(columns={"index": "Feature", client_id: "Value"})
-    client_data_renamed['Color'] = 'green' if approval_status == 'Granted' else 'red'
+    # Mise en forme des axes et titres
+    ax.set_title('Comparaison des Caractéristiques par Statut de Prêt', fontsize=18, fontweight='bold')
+    ax.set_xlabel('Caractéristique', fontsize=14)
+    ax.set_ylabel('Valeur Normalisée', fontsize=14)
+    ax.tick_params(axis='x', rotation=45)
+    sns.despine(trim=True)
 
-    # Ajout du client au graphique
-    sns.swarmplot(data=client_data_renamed, x='Feature', y='Value', linewidth=1, color=client_data_renamed['Color'].unique()[0],
-                  marker='p', size=8, edgecolor='k', label='Client', ax=ax)
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=20)
-    ax.set(xlabel="", ylabel="Valeurs Normalisées")
-    handles, _ = ax.get_legend_handles_labels()
-    ax.legend(handles[:3], ["Accordé", "Refusé", "Client"])
+    # Extraction et mise en évidence des données du client
+    valeurs_client = df.loc[[client_id], features].T.reset_index()
+    valeurs_client.columns = ['Caractéristique', 'Valeur']
+    valeurs_client['Couleur'] = 'approved' if etat_approbation == 'Accordé' else 'denied'
+    couleur = 'green' if etat_approbation == 'Accordé' else 'red'
+
+    sns.scatterplot(data=valeurs_client, x='Caractéristique', y='Valeur', s=200, color='black', ax=ax, zorder=5, label='Client')
+
+    # Amélioration de la légende
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles=handles[0:2] + [handles[-1]], labels=['Refusé', 'Accordé', 'Client'], title='Statut', frameon=False)
 
     plt.tight_layout()
     plt.show()
-
 
 
 
@@ -152,12 +141,26 @@ def plot_feature_importances(df):
     plt.xlabel('Normalized Importance')
     plt.title('Feature Importances globales des 12 premières caractéristiques')
 
+def modifier_infos_client(client_id, data_json):
+    api_url = f"{url}/api/predictpost"
+
+    response = requests.post(api_url, json=data_json)
+
+    if response.status_code == 200:
+        data = response.json()
+    else :
+        data = {"status": "Ko", "code": response.status_code}
+
+    return data
+
+
+
 
 if pressed:
     update_state('client_id', client_id_input)
     client_id = st.session_state.client_id
 
-    st.header('Impact Local des Caractéristiques sur la Prédiction')
+    st.header('Prédiction')
     # Requête à l'API Flask
     api_url = f"{url}/api/predict/{client_id}"
 
@@ -199,7 +202,7 @@ if pressed:
 
         st.markdown("---")
 
-    # Affichage des détails de la prédiction dans des colonnes alignées sur la largeur
+        # Affichage des détails de la prédiction dans des colonnes alignées sur la largeur
         col1, col2 = st.columns(2)
         with col1:
             st.markdown("## Détail de la prédiction :")
@@ -221,7 +224,6 @@ if option_1:
 
         # Requête à l'API Flask
         api_url = f"{url}/api/data/{client_id}"
-        # st.info(f"L'URL de l'API est : {api_url}")
 
         response = requests.get(api_url)
 
@@ -231,16 +233,97 @@ if option_1:
             # Transformer les données en DataFrame
             df = pd.DataFrame(data)
 
-            # Vous pourriez vouloir sélectionner quelques colonnes clés à afficher
-            # Pour cet exemple, je vais choisir quelques colonnes arbitrairement
             columns_to_display = [
                 "SK_ID_CURR", "NAME_CONTRACT_TYPE", "CODE_GENDER",
                 "CNT_CHILDREN", "AMT_INCOME_TOTAL", "DAYS_BIRTH", "DAYS_EMPLOYED"
             ]
-            # Afficher le DataFrame dans Streamlit
+
             st.dataframe(df[columns_to_display])
 
-            afficher_infos_client()
+            columns_to_update = [
+                "EXT_SOURCE_3", "EXT_SOURCE_2", "AMT_CREDIT", "AMT_INCOME_TOTAL"
+            ]
+
+            columns_to_modify = [col for col in columns_to_update if col != "SK_ID_CURR"]
+
+            modifications = {}
+
+            if st.checkbox("Modifier", key='modification_active'):
+                for col in columns_to_modify:
+                    # Afficher un champ de saisie pour chaque colonne, avec la valeur actuelle comme placeholder
+                    current_value = df[col].iloc[0]
+                    if isinstance(current_value, float):
+                        if current_value.is_integer():
+                            placeholder_value = str(int(current_value))
+                        else:
+                            placeholder_value = f"{current_value:.2f}"
+                    else:
+                        placeholder_value = str(current_value)
+
+                    new_value_str = st.text_input(f"{col}", placeholder_value, key=f"new_{col}")
+
+                    try:
+                        new_value = float(new_value_str)
+
+                        if new_value.is_integer():
+                            # Si la nouvelle valeur est un entier, enlever les décimales
+                            new_value_formatted = str(int(new_value))
+                        else:
+                            # Si c'est un nombre décimal, garder deux décimales
+                                            new_value_formatted = f"{new_value:.2f}"
+                    except ValueError:
+                        new_value = new_value_str
+
+                    if new_value_str != placeholder_value:
+                        # df.at[0, col] = new_value  # Mettre à jour la valeur dans le DataFrame
+                        modifications[col] = new_value_str
+
+                if st.button("Valider les modifications"):
+
+                    if modifications:
+                             data_to_send = {
+                            "id_client": client_id,
+                            "data": modifications
+                        }
+
+                    data = modifier_infos_client(client_id, data_to_send)
+
+                    prediction_details_new = {
+                        "Probabilité de Non-Remboursement": f"{data['probability']}%",
+                        "Classe": data['classe']
+                    }
+
+                    ## Prediction precedente :
+                    message = st.session_state.message
+                    prob = st.session_state.prob
+                    prob = round(float(prob) * 100)
+                    prediction_details_old = {
+                        "Probabilité de Non-Remboursement": f"{prob}%",
+                        "Classe": message
+                    }
+
+                    # Affichage des détails de la prédiction dans des colonnes alignées sur la largeur
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.markdown("## Détail de la nouvelle prédiction :")
+                    with col2:
+                        st.markdown("### Informations clés")
+                        for key, value in prediction_details_new.items():
+                            st.markdown(f"**{key}:** {value}")
+
+                    st.success("Modifications enregistrées et prédiction mise à jour.")
+
+                    with col1:
+                        st.markdown("## Détail de l'ancienne prédiction :")
+                    with col2:
+                        st.markdown("### Informations clés")
+                        for key, value in prediction_details_old.items():
+                            st.markdown(f"**{key}:** {value}")
+
+
+                    explication_text = afficher_infos_client()
+                    st.markdown(explication_text, unsafe_allow_html=True)
+
         else:
             st.warning("Veuillez d'abord obtenir une prédiction en validant un ID client.")
 
@@ -249,13 +332,8 @@ if option_1:
     else:
         st.write("Erreur lors de la requête à l'API.")
 
-def display_shap_plot(shap_values, expected_value, feature_names, title, nb_features):
-    expl = shap.Explanation(values=np.array(shap_values).reshape(1, -1),
-                            base_values=expected_value,
-                            feature_names=feature_names)
-    shap.plots.waterfall(expl[0], max_display=nb_features, show=False)
-    plt.title(title)
-    st.pyplot(bbox_inches='tight', clear_figure=True)
+
+
 
 
 if option_2:
@@ -276,32 +354,18 @@ if option_2:
 
             st.subheader("Classe 0: Remboursement")
             display_shap_plot(data["shap_values_class_0"], data["expected_value_class_0"],
-            data["feature_names"], "SHAP - Classe 0 (Remboursement)", nb_features)
+                              data["feature_names"], "SHAP - Classe 0 (Remboursement)", nb_features)
 
             # Affichage du graphique pour la classe 1 (Non-Remboursement)
             st.subheader("Classe 1: Non-Remboursement")
             display_shap_plot(data["shap_values_class_1"], data["expected_value_class_1"],
-            data["feature_names"], "SHAP - Classe 1 (Non-Remboursement)", nb_features)
-
-            st.markdown("""
-                    <style>
-                    .custom-info {
-                        font-size: 18px;  
-                        color: #000000; 
-                        background-color: #ADD8E6; 
-                        padding: 10px; 
-                        border-radius: 5px; 
-                    }
-                    </style>
-                    <div class="custom-info">
-                    <strong>Explication du graphique en cascade SHAP</strong><br>
-                    Le graphique en cascade ci-dessus débute par la valeur attendue de la sortie du modèle, c'est-à-dire la moyenne des prédictions pour l'ensemble des observations. Cette valeur de base est le point de départ pour comprendre l'influence de chaque caractéristique sur la prédiction finale. Chaque barre du graphique, qu'elle soit orientée vers le haut (en rouge) pour une influence positive, ou vers le bas (en bleu) pour une influence négative, représente la contribution spécifique de chaque caractéristique à l'écart entre la valeur attendue et la prédiction finale pour le dossier spécifique du client. Cette visualisation permet de décomposer de manière intuitive comment chaque facteur contribue à la décision finale du modèle, en fournissant une compréhension approfondie de la prédiction à un niveau individuel.
-                    </div>
-                """, unsafe_allow_html=True)
+                              data["feature_names"], "SHAP - Classe 1 (Non-Remboursement)", nb_features)
 
 
-        # shap_df = pd.DataFrame({'Feature': feature_names, 'SHAP Value': shap_values})
-        # st.write(shap_df)
+            # Afficher l'aide
+            explication_text =  afficher_infos_local()
+            st.markdown(explication_text, unsafe_allow_html=True)
+
         else:
             st.warning("Veuillez d'abord obtenir une prédiction en validant un ID client.")
 
@@ -322,7 +386,6 @@ if option_3:
         response = requests.get(api_url)
 
         if response.status_code == 200:
-
 
             data = response.json()
 
@@ -345,23 +408,9 @@ if option_3:
                 st.pyplot(plt)
 
 
-            # Afficher le graphique dans Streamlit
-
-            st.markdown("""
-                    <style>
-                    .custom-info-global {
-                        font-size: 18px;  
-                        color: #000000; 
-                        background-color: #ADD8E6; 
-                        padding: 10px; 
-                        border-radius: 5px; 
-                    }
-                    </style>
-                    <div class="custom-info-global">
-                    <strong>Compréhension de l'importance globale des caractéristiques</strong><br>
-                    Ce graphique illustre l'importance globale des différentes caractéristiques prises en compte par le modèle pour effectuer ses prédictions. Chaque barre représente une caractéristique différente et son poids relatif dans la décision du modèle, permettant d'identifier les facteurs ayant le plus fort impact sur les prédictions, indépendamment des cas individuels. Cette vue d'ensemble aide à comprendre quelles caractéristiques le modèle considère comme les plus déterminantes pour évaluer le risque, offrant ainsi une vision claire de la logique suivie par le modèle dans son ensemble.
-                    </div>
-                """, unsafe_allow_html=True)
+            # Afficher l'aide
+            explication_text =  afficher_infos_global()
+            st.markdown(explication_text, unsafe_allow_html=True)
 
         else:
             st.warning("Veuillez d'abord obtenir une prédiction en validant un ID client.")
@@ -371,81 +420,51 @@ if option_3:
     else:
         st.write("Erreur lors de la requête à l'API.")
 
+
 if option_4:
     if 'client_id' in st.session_state:
         st.header('Comparaison avec les groupes clients')
-        st.write(f"Client ID avec option_4 cochée : {st.session_state.client_id} : {st.session_state.message} : {st.session_state.prob}")
+        # st.write(f"Client ID avec option_4 cochée : {st.session_state.client_id} : {st.session_state.message} : {st.session_state.prob}")
         client_id = st.session_state.client_id
+        client_id = int(client_id)
         message = st.session_state.message
         prob = st.session_state.prob
+
         decision = 0 if message == 'accepté' else 1
 
         # Requête à l'API Flask
-        api_url = f"{url}/api/data/knn//{client_id}"
         api_url = f"{url}/api/data/all"
-        st.info(f"L'URL de l'API est : {api_url}")
+        # st.info(f"L'URL de l'API est : {api_url}")
 
         response = requests.get(api_url)
 
         if response.status_code == 200:
             data = response.json()
-            data_train_json = data['data_train']
-            data_test_json  = data['data_test']
+            data_train_json = data['data']
+            data_info_json  = data['data_info']
 
             df_train = pd.DataFrame.from_dict(data_train_json)
-            df_train = df_train.rename(columns={'Unnamed: 0': 'SK_ID_CURR'})
+            df_info = pd.DataFrame.from_dict(data_info_json)
+            # df_train = df_train.rename(columns={'Unnamed: 0': 'SK_ID_CURR'})
             df_train.set_index('SK_ID_CURR', inplace=True)
 
-            client_id = 47531
             seuil = 0.48
-
-            if 47531 in df_train.index:
-                st.write("La valeur 447596 est présente dans l'index de votre DataFrame.")
-            else:
-                st.write("La valeur 447596 n'est pas présente dans l'index de votre DataFrame.")
-
-
 
             # Convertir les valeurs décimales en 0 ou 1 en fonction du seuil
             df_train['TARGET'] = df_train['TARGET'].apply(lambda x: 1 if x > seuil else 0)
 
-            if client_id in df_train.index:
-                st.write(f"Client ID {client_id} exists in the DataFrame.")
-            else:
-                st.write(f"Client ID {client_id} does not exist in the DataFrame.")
-
-
-            df_test = pd.DataFrame.from_dict(data_test_json)
-
-            st.dataframe(df_train.sample(5))
-            st.dataframe(df_test.sample(5))
-
-            if 'TARGET' in df_train.columns:
-                st.write("Colonne 'target':")
-                st.write(df_train['TARGET'])
-            else:
-                st.error("La colonne 'target' n'est pas présente dans le DataFrame.")
-
-
+            st.write("Aperçu des données sur un groupe représentatif de 5 clients")
+            st.dataframe(df_info.sample(5))
 
             features_select = [
-                "CODE_GENDER",
-                "FLAG_OWN_CAR",
-                "FLAG_OWN_REALTY",
-                "CNT_CHILDREN",
-                "AMT_INCOME_TOTAL",
-                "AMT_CREDIT"
+                "SK_ID_CURR", "NAME_CONTRACT_TYPE", "CODE_GENDER",
+                "CNT_CHILDREN", "AMT_INCOME_TOTAL", "DAYS_BIRTH", "DAYS_EMPLOYED"
             ]
 
             features_num = df_train.select_dtypes(include=np.number).columns.tolist()
             features_existantes = [col for col in features_select if col in features_num]
 
 
-
-            #features_num.remove('class')
-            # features_num.remove('score')
-
-            st.info("Comparaison avec un groupe des clients")
             st.write("Aperçu des données sur un groupe représentatif de 5 clients")
 
             selected_features = st.multiselect("Sélectionner les caractéristiques numériques à visualiser des clients:",
@@ -456,32 +475,171 @@ if option_4:
             fig = visualize_client_comparison(df_train, client_id, selected_features, message)
             st.pyplot(fig)
 
+            ## Aide
+            explication_text = aide_comparaison_impact()
+            st.markdown(explication_text, unsafe_allow_html=True)
+
+
+            ## Checkboxes - Select
             if st.checkbox('Analyse bivariée des clients'):
                 bi_select = features_select
 
-                bi_select.insert(0, '<Select>')
-                list_x = bi_select
-                list_y = bi_select
-                c1, c2, c3, c4 = st.columns(4)
-                with c1:
-                    a = st.selectbox("Sélectionner une caractéristique X ", list_x)
-                with c2:
-                    b = st.selectbox("Sélectionner une caractéristique Y", list_y)
-                if (a != '<Select>') & (b != '<Select>'):
-                    fig = px.scatter(df_train, x=a, y=b, color= 'TARGET', opacity=0.5, width=1000, height=600,
-                                     color_discrete_sequence=["red", "green"],
-                                     title="Analyse bivariée des caractéristiques sélectionnées pour un groupe des clients")
-                    df_cust = df_train.iloc[df_train.index == str(client_id)]
-                    fig.add_trace(go.Scatter(x=df_cust[a], y=df_cust[b], mode='markers',
-                                             marker_symbol='star', marker_size=30, marker_color="black",
-                                             name="Client"))  # showlegend=False))
-                    fig.update_layout(
-                        font_family="Arial",
-                        font_size=15,
-                        title_font_color="blue")
+                options_selection = ['<Choisir>'] + bi_select
 
-                    st.plotly_chart(fig, use_container_width=False)
+                # Définition des variables pour les sélections X et Y
+                selection_X = options_selection
+                selection_Y = options_selection
 
+                # Création de colonnes pour les sélections
+                col1, col2, col3, col4 = st.columns(4)
+
+                # Sélection de la caractéristique X
+                with col2:
+                    choix_X = st.selectbox("Choix caractéristique X", selection_X)
+
+                # Sélection de la caractéristique Y
+                with col3:
+                    choix_Y = st.selectbox("Choix caractéristique Y", selection_Y)
+
+                # Vérification que les choix ne sont pas l'option par défaut
+                if (choix_X != '<Choisir>') and (choix_Y != '<Choisir>'):
+                    # Création du graphique
+                    graphique = px.scatter(df_train, x=choix_X, y=choix_Y, color='TARGET', opacity=0.6, width=1000, height=600,
+                                           color_discrete_map={"1": "red", "0": "green"},
+                                           title="Analyse des variables choisies pour un ensemble de clients")
+
+                    # Ajout d'un marqueur pour le client spécifique
+                    client_specifique = df_train.loc[df_train.index == str(client_id)]
+                    graphique.add_trace(go.Scatter(x=client_specifique[choix_X], y=client_specifique[choix_Y], mode='markers',
+                                                   marker=dict(symbol='star', size=20, color="black"),
+                                                   name="Client sélectionné"))
+
+                    # Mise à jour de la configuration du graphique
+                    graphique.update_layout(
+                        font=dict(family="Courier New", size=14, color="navy"),
+                        title_font=dict(size=16, color="darkred"))
+
+                    # Affichage du graphique
+                    st.plotly_chart(graphique, use_container_width=True)
+
+                    # Aide
+                    explication_text = aide_comparaison_bi(choix_X,choix_Y)
+                    st.markdown(explication_text, unsafe_allow_html=True)
+
+
+
+##############################################
+
+
+
+        else:
+            st.warning("Veuillez d'abord obtenir une prédiction en validant un ID client.")
+
+    elif response.status_code == 404:
+        st.write("ID inconnu.")
+    else:
+        st.write("Erreur lors de la requête à l'API.")
+
+
+
+if option_5:
+    if 'client_id' in st.session_state:
+        st.header('Comparaison avec les groupes clients')
+        client_id = st.session_state.client_id
+        client_id = int(client_id)
+        message = st.session_state.message
+        prob = st.session_state.prob
+
+        decision = 0 if message == 'accepté' else 1
+
+        # Requête à l'API Flask
+        api_url = f"{url}/api/data/knn/{client_id}"
+
+        response = requests.get(api_url)
+
+        if response.status_code == 200:
+            data = response.json()
+            data_train_json = data['df_sim_client_norm']
+            data_info_json  = data['df_sim_client']
+
+            df_train = pd.DataFrame.from_dict(data_train_json)
+            df_info = pd.DataFrame.from_dict(data_info_json)
+            df_train.set_index('SK_ID_CURR', inplace=True)
+
+            seuil = 0.48
+
+
+            # Convertir les valeurs décimales en 0 ou 1 en fonction du seuil
+            df_train['TARGET'] = df_train['TARGET'].apply(lambda x: 1 if x > seuil else 0)
+
+            st.write("Aperçu des données sur un groupe représentatif de 5 clients")
+            st.dataframe(df_info.sample(5))
+
+            features_select = [
+                "SK_ID_CURR", "NAME_CONTRACT_TYPE", "CODE_GENDER",
+                "CNT_CHILDREN", "AMT_INCOME_TOTAL", "DAYS_BIRTH", "DAYS_EMPLOYED"
+            ]
+
+            features_num = df_train.select_dtypes(include=np.number).columns.tolist()
+            features_existantes = [col for col in features_select if col in features_num]
+
+            selected_features = st.multiselect("Sélectionner les caractéristiques numériques à visualiser des clients:",
+                                               options=sorted(features_existantes),
+                                               default=features_existantes)
+
+            ## Création du graphique
+            fig = visualize_client_comparison(df_train, client_id, selected_features, message)
+            st.pyplot(fig)
+
+            ## Aide
+            explication_text = aide_comparaison_impact()
+            st.markdown(explication_text, unsafe_allow_html=True)
+
+            ## Checkboxes - Select
+            if st.checkbox('Analyse bivariée des clients'):
+                bi_select = features_select
+
+                options_selection = ['<Choisir>'] + bi_select
+
+                # Définition des variables pour les sélections X et Y
+                selection_X = options_selection
+                selection_Y = options_selection
+
+                # Création de colonnes pour les sélections
+                col1, col2, col3, col4 = st.columns(4)
+
+                # Sélection de la caractéristique X
+                with col2:
+                    choix_X = st.selectbox("Choix caractéristique X", selection_X)
+
+                # Sélection de la caractéristique Y
+                with col3:
+                    choix_Y = st.selectbox("Choix caractéristique Y", selection_Y)
+
+                # Vérification que les choix ne sont pas l'option par défaut
+                if (choix_X != '<Choisir>') and (choix_Y != '<Choisir>'):
+                    # Création du graphique
+                    graphique = px.scatter(df_train, x=choix_X, y=choix_Y, color='TARGET', opacity=0.6, width=1000, height=600,
+                                           color_discrete_map={"1": "red", "0": "green"},
+                                           title="Analyse des variables choisies pour un ensemble de clients")
+
+                    # Ajout d'un marqueur pour le client spécifique
+                    client_specifique = df_train.loc[df_train.index == str(client_id)]
+                    graphique.add_trace(go.Scatter(x=client_specifique[choix_X], y=client_specifique[choix_Y], mode='markers',
+                                                   marker=dict(symbol='star', size=20, color="black"),
+                                                   name="Client sélectionné"))
+
+                    # Mise à jour de la configuration du graphique
+                    graphique.update_layout(
+                        font=dict(family="Courier New", size=14, color="navy"),
+                        title_font=dict(size=16, color="darkred"))
+
+                    # Affichage du graphique
+                    st.plotly_chart(graphique, use_container_width=True)
+
+                    # Aide
+                    explication_text = aide_comparaison_bi(choix_X,choix_Y)
+                    st.markdown(explication_text, unsafe_allow_html=True)
         else:
             st.warning("Veuillez d'abord obtenir une prédiction en validant un ID client.")
 
@@ -493,7 +651,7 @@ if option_4:
 if option_6:
 
     api_url = f"{url}/api/desc/all"
-    st.info(f"L'URL de l'API est : {api_url}")
+    #st.info(f"L'URL de l'API est : {api_url}")
 
     response = requests.get(api_url)
 
@@ -505,11 +663,13 @@ if option_6:
         options = [(row[str(i)], description[str(i)]) for i in range(len(description))]
 
         # Utilisez la liste de tuples pour alimenter le selectbox
-        selected_option = st.selectbox("Choisir une caractéristique :", options, format_func=lambda x: x[0])
+        st.info(f"Choisir une caractéristique :")
+
+        selected_option = st.selectbox("", options, format_func=lambda x: x[0])
 
         # Affichez la description pour l'option sélectionnée
         if selected_option:
-            st.write(f"**Description:** {selected_option[1]}")
+            st.info(f"**Description:** {selected_option[1]}")
         else:
             st.error("Impossible de charger les descriptions depuis l'API.")
 
@@ -536,9 +696,12 @@ if option_6:
 
             # Affichage des descriptions avec style différent pour lignes paires et impaires
             for i in range(len(description)):
+
                 div_class = "pair" if i % 2 == 0 else "impair"
                 st.markdown(f"<div class='description-style'><b>{row[str(i)]}:</b> {description[str(i)]}</div>",
                             unsafe_allow_html=True)
+
+
 
 
 # Histogramme
