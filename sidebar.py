@@ -16,7 +16,7 @@ def create_sidebar():
     st.sidebar.markdown(focus_script, unsafe_allow_html=True)
 
     # Titre de l'application
-    st.sidebar.image("../logo.png", caption='logo', use_column_width=True)
+    st.sidebar.image("logo.png", caption='logo', use_column_width=True)
     st.title("Prédiction du Risque de Non-Remboursement")
 
     st.sidebar.title("Saisir un numéro de client")
