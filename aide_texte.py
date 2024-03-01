@@ -1,4 +1,24 @@
 
+def col_desc() :
+    columns_mapping = {
+        "SK_ID_CURR": "ID Client",
+        "NAME_CONTRACT_TYPE": "Type de Contrat",
+        "CODE_GENDER": "Genre",
+        "CNT_CHILDREN": "Nombre d'Enfants",
+        "AMT_INCOME_TOTAL": "Revenu Total",
+        "DAYS_BIRTH": "Âge (jours)",
+        "DAYS_EMPLOYED": "Emploi (jours)",
+        "EXT_SOURCE_3": "Source Externe 3",
+        "EXT_SOURCE_2": "Source Externe 2",
+        "AMT_CREDIT": "Montant du Crédit"
+    }
+
+    columns_to_display = [
+        "ID Client", "Type de Contrat", "Genre",
+        "Nombre d'Enfants", "Revenu Total", "Âge (jours)", "Emploi (jours)"
+    ]
+    return columns_to_display, columns_mapping
+
 #################################################
 ###         Aide Comparaison Client           ###
 #################################################
