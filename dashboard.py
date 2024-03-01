@@ -220,6 +220,9 @@ if option_1:
         st.header('Informations Client')
         client_id = st.session_state.client_id
 
+        st.info("Visualisez les informations détaillées des clients ci-dessous. Vous avez également la possibilité de mettre à jour les valeurs spécifiques à chaque client en activant l'option de modification.")
+
+
         # Requête à l'API Flask
         api_url = f"{url}/api/data/{client_id}"
 
@@ -231,12 +234,31 @@ if option_1:
             # Transformer les données en DataFrame
             df = pd.DataFrame(data)
 
+            
+
+            # Colonnes à afficher avec les noms conviviaux
+            columns_mapping = {
+                "SK_ID_CURR": "ID Client",
+                "NAME_CONTRACT_TYPE": "Type de Contrat",
+                "CODE_GENDER": "Genre",
+                "CNT_CHILDREN": "Nombre d'Enfants",
+                "AMT_INCOME_TOTAL": "Revenu Total",
+                "DAYS_BIRTH": "Âge (jours)",
+                "DAYS_EMPLOYED": "Emploi (jours)",
+                "EXT_SOURCE_3": "Source Externe 3",
+                "EXT_SOURCE_2": "Source Externe 2",
+                "AMT_CREDIT": "Montant du Crédit"
+            }
+
             columns_to_display = [
-                "SK_ID_CURR", "NAME_CONTRACT_TYPE", "CODE_GENDER",
-                "CNT_CHILDREN", "AMT_INCOME_TOTAL", "DAYS_BIRTH", "DAYS_EMPLOYED"
+                "ID Client", "Type de Contrat", "Genre",
+                "Nombre d'Enfants", "Revenu Total", "Âge (jours)", "Emploi (jours)"
             ]
 
-            st.dataframe(df[columns_to_display])
+            # Mise à jour des noms des colonnes dans le DataFrame pour l'affichage
+            df_for_display = df.rename(columns=columns_mapping)
+            st.dataframe(df_for_display[columns_to_display])
+
 
             columns_to_update = [
                 "EXT_SOURCE_3", "EXT_SOURCE_2", "AMT_CREDIT", "AMT_INCOME_TOTAL"
@@ -244,9 +266,13 @@ if option_1:
 
             columns_to_modify = [col for col in columns_to_update if col != "SK_ID_CURR"]
 
+            st.markdown('<br>', unsafe_allow_html=True)
+            st.markdown('<br>', unsafe_allow_html=True)
+
             modifications = {}
 
-            if st.checkbox("Modifier", key='modification_active'):
+            st.info("Activer la modification des informations client")
+            if st.checkbox(''):
                 for col in columns_to_modify:
                     # Afficher un champ de saisie pour chaque colonne, avec la valeur actuelle comme placeholder
                     current_value = df[col].iloc[0]
@@ -259,6 +285,9 @@ if option_1:
                         placeholder_value = str(current_value)
 
                     new_value_str = st.text_input(f"{col}", placeholder_value, key=f"new_{col}")
+
+
+
 
                     try:
                         new_value = float(new_value_str)
@@ -275,6 +304,9 @@ if option_1:
                     if new_value_str != placeholder_value:
                         # df.at[0, col] = new_value  # Mettre à jour la valeur dans le DataFrame
                         modifications[col] = new_value_str
+
+
+
 
                 if st.button("Valider les modifications"):
 
@@ -318,9 +350,10 @@ if option_1:
                         for key, value in prediction_details_old.items():
                             st.markdown(f"**{key}:** {value}")
 
-
-                    explication_text = afficher_infos_client()
-                    st.markdown(explication_text, unsafe_allow_html=True)
+                st.markdown('<br>', unsafe_allow_html=True)
+                st.markdown('<br>', unsafe_allow_html=True)
+                explication_text = afficher_infos_client()
+                st.markdown(explication_text, unsafe_allow_html=True)
 
         else:
             st.warning("Veuillez d'abord obtenir une prédiction en validant un ID client.")
@@ -345,10 +378,23 @@ if option_2:
 
         response = requests.get(api_url)
 
+        st.info("Personnalisez votre exploration : Utilisez le slider ci-dessous pour sélectionner le nombre de variables que vous souhaitez visualiser. Cet outil interactif vous permet d'ajuster la profondeur de l'analyse à votre convenance, mettant en lumière les facteurs les plus influents sur la prédiction de risque selon votre sélection.")
         if response.status_code == 200:
             data = response.json()
 
-            nb_features = st.slider('Nombre de variables à visualiser', 0, 20, 10)
+            st.markdown("""
+            <style>
+            .big-font {
+                font-size:20px !important;
+            }
+            </style>
+            <div class='big-font'>Nombre de variables à visualiser</div>
+            """, unsafe_allow_html=True)
+
+            # Création du slider
+            nb_features = st.slider('', 0, 20, 10)
+
+
 
             st.subheader("Classe 0: Remboursement")
             display_shap_plot(data["shap_values_class_0"], data["expected_value_class_0"],
@@ -432,7 +478,6 @@ if option_4:
 
         # Requête à l'API Flask
         api_url = f"{url}/api/data/all"
-        # st.info(f"L'URL de l'API est : {api_url}")
 
         response = requests.get(api_url)
 
@@ -443,7 +488,6 @@ if option_4:
 
             df_train = pd.DataFrame.from_dict(data_train_json)
             df_info = pd.DataFrame.from_dict(data_info_json)
-            # df_train = df_train.rename(columns={'Unnamed: 0': 'SK_ID_CURR'})
             df_train.set_index('SK_ID_CURR', inplace=True)
 
             seuil = 0.48
@@ -451,7 +495,7 @@ if option_4:
             # Convertir les valeurs décimales en 0 ou 1 en fonction du seuil
             df_train['TARGET'] = df_train['TARGET'].apply(lambda x: 1 if x > seuil else 0)
 
-            st.write("Aperçu des données sur un groupe représentatif de 5 clients")
+            st.info("Aperçu des données sur un groupe représentatif de 5 clients")
             st.dataframe(df_info.sample(5))
 
             features_select = [
@@ -463,11 +507,14 @@ if option_4:
             features_existantes = [col for col in features_select if col in features_num]
 
 
-            st.write("Aperçu des données sur un groupe représentatif de 5 clients")
+            st.markdown('<br>', unsafe_allow_html=True)
+            st.markdown('<br>', unsafe_allow_html=True)
+            st.info("Sélectionner les caractéristiques numériques à visualiser des clients:")
 
-            selected_features = st.multiselect("Sélectionner les caractéristiques numériques à visualiser des clients:",
-                                               options=sorted(features_existantes),
-                                               default=features_existantes)
+            # Création du multiselect
+            selected_features = st.multiselect("",
+                                                   options=sorted(features_existantes),
+                                                   default=features_existantes)
 
             ## Création du graphique
             fig = visualize_client_comparison(df_train, client_id, selected_features, message)
@@ -477,9 +524,12 @@ if option_4:
             explication_text = aide_comparaison_impact()
             st.markdown(explication_text, unsafe_allow_html=True)
 
+            st.markdown('<br>', unsafe_allow_html=True)
+            st.markdown('<br>', unsafe_allow_html=True)
 
-            ## Checkboxes - Select
-            if st.checkbox('Analyse bivariée des clients'):
+            st.info("Analyse bivariée des clients : Cochez la case ci-dessous pour une analyse bivariée approfondie, révélant les interactions clés entre les caractéristiques des clients qui influencent le risque de crédit.")
+
+            if st.checkbox(''):
                 bi_select = features_select
 
                 options_selection = ['<Choisir>'] + bi_select
@@ -524,12 +574,6 @@ if option_4:
                     explication_text = aide_comparaison_bi(choix_X,choix_Y)
                     st.markdown(explication_text, unsafe_allow_html=True)
 
-
-
-##############################################
-
-
-
         else:
             st.warning("Veuillez d'abord obtenir une prédiction en validant un ID client.")
 
@@ -570,7 +614,7 @@ if option_5:
             # Convertir les valeurs décimales en 0 ou 1 en fonction du seuil
             df_train['TARGET'] = df_train['TARGET'].apply(lambda x: 1 if x > seuil else 0)
 
-            st.write("Aperçu des données sur un groupe représentatif de 5 clients")
+            st.info("Aperçu des données sur un groupe représentatif de 5 clients")
             st.dataframe(df_info.sample(5))
 
             features_select = [
@@ -581,7 +625,12 @@ if option_5:
             features_num = df_train.select_dtypes(include=np.number).columns.tolist()
             features_existantes = [col for col in features_select if col in features_num]
 
-            selected_features = st.multiselect("Sélectionner les caractéristiques numériques à visualiser des clients:",
+            st.markdown('<br>', unsafe_allow_html=True)
+            st.markdown('<br>', unsafe_allow_html=True)
+            st.info("Sélectionner les caractéristiques numériques à visualiser des clients:")
+
+            # Création du multiselect
+            selected_features = st.multiselect("",
                                                options=sorted(features_existantes),
                                                default=features_existantes)
 
@@ -593,8 +642,13 @@ if option_5:
             explication_text = aide_comparaison_impact()
             st.markdown(explication_text, unsafe_allow_html=True)
 
-            ## Checkboxes - Select
-            if st.checkbox('Analyse bivariée des clients'):
+            st.markdown('<br>', unsafe_allow_html=True)
+            st.markdown('<br>', unsafe_allow_html=True)
+
+            st.info("Analyse bivariée des clients : Cochez la case ci-dessous pour une analyse bivariée approfondie, révélant les interactions clés entre les caractéristiques des clients qui influencent le risque de crédit.")
+
+            if st.checkbox(''):
+
                 bi_select = features_select
 
                 options_selection = ['<Choisir>'] + bi_select
@@ -661,19 +715,23 @@ if option_6:
         options = [(row[str(i)], description[str(i)]) for i in range(len(description))]
 
         # Utilisez la liste de tuples pour alimenter le selectbox
-        st.info(f"Choisir une caractéristique :")
+        st.info(f"Choisir une caractéristique afin de voir sa description:")
 
         selected_option = st.selectbox("", options, format_func=lambda x: x[0])
 
         # Affichez la description pour l'option sélectionnée
         if selected_option:
-            st.info(f"**Description:** {selected_option[1]}")
+            st.warning(f"**Description:** {selected_option[1]}")
         else:
             st.error("Impossible de charger les descriptions depuis l'API.")
 
-        show_all = st.checkbox("Tout voir")
+        st.markdown('<br>', unsafe_allow_html=True)
+        st.markdown('<br>', unsafe_allow_html=True)
 
-        if show_all:
+
+        st.info("Afficher toutes les descriptions")
+
+        if st.checkbox(""):
             st.markdown("""
                     <style>
                     .pair {
