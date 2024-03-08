@@ -34,7 +34,7 @@ Exécutez le tableau de bord Streamlit :
 streamlit run dashboard/app_streamlit.py
 
 ## Déploiement
-Les instructions pour le déploiement de l'API et du Dashboard sur une plateforme cloud (Heroku) sont fournies dans le fichier DEPLOYMENT.md
+Les instructions pour le déploiement du Dashboard sur une plateforme cloud (Heroku) sont fournies dans le fichier DEPLOYMENT.md
 
 ## Utilisation
 Après avoir démarré le tableau de bord Streamlit, vous pouvez :
@@ -46,6 +46,9 @@ Visualiser les résultats et les métriques clés du modèle.
 - Interface intuitive pour tester l'API de scoring de crédit.
 - Visualisation des prédictions de scoring et des métriques associées.
 - Possibilité de tester différents scénarios clients.
+
+## Outils et Packages Utilisés
+Un fichier `requirements.txt` est inclus, listant toutes les bibliothèques Python nécessaires pour exécuter l'API.
 
 ## Licence
 [MIT](https://choosealicense.com/licenses/mit/)
