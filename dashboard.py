@@ -26,9 +26,9 @@ couleur_refuse = "#B82010"
 url = f"https://ocp8api-c762537c6d53.herokuapp.com"
 
 
-###############################
-###      GESTION STATE      ###
-###############################
+    ###############################
+    ###      GESTION STATE      ###
+    ###############################
 
 if 'client_id' not in st.session_state:
     st.session_state.client_id = ''
@@ -37,8 +37,6 @@ if 'client_id' not in st.session_state:
 
 if 'message' not in st.session_state:
     st.session_state.message = ''
-
-
 
 def update_state(key, value):
     st.session_state[key] = value
@@ -152,7 +150,12 @@ def modifier_infos_client(client_id, data_json):
 
 
 
+##############################################
+###         Choix Menu                     ###
+##############################################
 
+
+################    Prediction
 if pressed:
     update_state('client_id', client_id_input)
     client_id = st.session_state.client_id
@@ -214,6 +217,7 @@ if pressed:
     else:
         st.warning("Erreur lors de la requête à l'API.")
 
+################    Description
 if option_1:
     if 'client_id' in st.session_state:
         st.header('Informations Client')
@@ -365,7 +369,7 @@ if option_1:
 
 
 
-
+################    Shap Local
 if option_2:
     if 'client_id' in st.session_state:
         st.header('Impact Local des Caractéristiques sur la Prédiction')
@@ -417,6 +421,7 @@ if option_2:
     else:
         st.write("Erreur lors de la requête à l'API.")
 
+################    Shap global
 if option_3:
     if 'client_id' in st.session_state:
         st.header('Impact Global des Caractéristiques sur la Prédiction')
@@ -463,11 +468,11 @@ if option_3:
     else:
         st.write("Erreur lors de la requête à l'API.")
 
-
+################    Comparaison groupe similaire
 if option_4:
     if 'client_id' in st.session_state:
         st.header('Comparaison avec les groupes clients')
-        # st.write(f"Client ID avec option_4 cochée : {st.session_state.client_id} : {st.session_state.message} : {st.session_state.prob}")
+
         client_id = st.session_state.client_id
         client_id = int(client_id)
         message = st.session_state.message
@@ -582,7 +587,7 @@ if option_4:
         st.write("Erreur lors de la requête à l'API.")
 
 
-
+################    Comparaison groupe clients similaires
 if option_5:
     if 'client_id' in st.session_state:
         st.header('Comparaison avec un groupes clients similaires')
@@ -699,11 +704,10 @@ if option_5:
     else:
         st.write("Erreur lors de la requête à l'API.")
 
+################    Definition
 if option_6:
 
     api_url = f"{url}/api/desc/all"
-    #st.info(f"L'URL de l'API est : {api_url}")
-
     response = requests.get(api_url)
 
     if response.status_code == 200:
@@ -732,85 +736,32 @@ if option_6:
 
         if st.checkbox(""):
             st.markdown("""
-                    <style>
-                    .pair {
-                        background-color: #f0f2f6; /* Couleur de fond pour les lignes paires */
-                        padding: 10px;
-                        border-radius: 5px;
-                        margin-bottom: 5px; /* Espace entre les entrées */
-                    }
-                    
-                    .impair {
-                        background-color: #e6e6e6; /* Couleur de fond pour les lignes impaires */
-                        padding: 10px;
-                        border-radius: 5px;
-                        margin-bottom: 5px; /* Espace entre les entrées */
-                    }
-                    </style>
-                    """, unsafe_allow_html=True)
+                            <style>
+                            .pair {
+                                background-color: #fffce7; /* Couleur de fond pour les lignes paires */
+                                padding: 10px;
+                                border-radius: 5px;
+                                margin-bottom: 5px; /* Espace entre les entrées */
+                            }
+                            
+                            .impair {
+                                background-color: #e8f2fc; /* Couleur de fond pour les lignes impaires */
+                                padding: 10px;
+                                border-radius: 5px;
+                                margin-bottom: 5px; /* Espace entre les entrées */
+                            }
+                            </style>
+                            """, unsafe_allow_html=True)
 
             # Affichage des descriptions avec style différent pour lignes paires et impaires
             for i in range(len(description)):
 
                 div_class = "pair" if i % 2 == 0 else "impair"
-                st.markdown(f"<div class='description-style'><b>{row[str(i)]}:</b> {description[str(i)]}</div>",
+                st.markdown(f"<div class='{div_class}'><b>{row[str(i)]}:</b> {description[str(i)]}</div>",
                             unsafe_allow_html=True)
 
 
 
-
-# Histogramme
-def plot_feature_distribution(df, feature):
-    fig = px.histogram(df, x=feature, title=f'Distribution de {feature}')
-    st.plotly_chart(fig)
-
-
-# Analyse Bivariée
-def plot_bivariate_analysis(df, feature1, feature2):
-    fig = px.scatter(df, x=feature1, y=feature2, title=f'Analyse bi-variée entre {feature1} et {feature2}')
-    st.plotly_chart(fig)
-
-
-def display_prediction_graph(probability, seuil_pourc=48):
-    """
-    Affiche un graphique à barres indiquant la probabilité de non-remboursement.
-
-    :param probability: La probabilité de non-remboursement exprimée en pourcentage.
-    :param seuil_pourc: Le seuil de décision exprimé en pourcentage.
-    """
-    categories = ['Accepté', 'Refusé']
-    values = [100 - probability, probability]  # Probabilités calculées
-    colors = ['green', 'red']  # Couleurs pour chaque catégorie
-    seuil_pourc = seuil_pourc  # Convertir le seuil en pourcentage pour correspondre à l'échelle du graphique
-
-    # Création du graphique à barres
-    fig, ax = plt.subplots()
-    bars = ax.bar(categories, values, color=colors)
-
-    # Ajout de la ligne de seuil
-    ax.axhline(y=seuil_pourc, color='blue', linestyle='--', label=f'Seuil: {seuil_pourc}%')
-
-    # Ajout de titres et étiquettes
-    ax.set_ylabel('Pourcentage')
-    ax.set_title('Répartition par classe')
-    ax.set_ylim(0, 100)
-    ax.legend()
-
-    # Afficher les valeurs sur les barres
-    for bar in bars:
-        height = bar.get_height()
-        ax.annotate(f'{height}%',
-                    xy=(bar.get_x() + bar.get_width() / 2, height),
-                    xytext=(0, 3),  # Décalage vertical pour le label
-                    textcoords="offset points",
-                    ha='center', va='bottom')
-
-    # Retourner le graphique pour affichage dans Streamlit
-    return fig
-
-
-
-import streamlit as st
 
 
 
