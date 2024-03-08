@@ -16,6 +16,9 @@ Exécutez le tableau de bord Streamlit :
 
 streamlit run dashboard/app_streamlit.py
 
+## Déploiement
+Les instructions pour le déploiement de l'API et du Dashboard sur une plateforme cloud (Heroku) sont fournies dans le fichier DEPLOYMENT.md
+
 ## Utilisation
 Après avoir démarré le tableau de bord Streamlit, vous pouvez :
 
