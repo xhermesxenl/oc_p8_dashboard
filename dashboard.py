@@ -8,7 +8,7 @@ import shap
 import numpy as np
 import seaborn as sns
 
-from aide_texte import aide_comparaison_impact, aide_comparaison_bi, afficher_infos_client, afficher_infos_local, afficher_infos_global
+from aide_texte import aide_comparaison_impact, aide_comparaison_bi, afficher_infos_client, afficher_infos_local, afficher_infos_global, afficher_menu_client
 from sidebar import create_sidebar
 
 # Configuration de la page
@@ -32,14 +32,13 @@ url = f"https://ocp8api-c762537c6d53.herokuapp.com"
 
 if 'client_id' not in st.session_state:
     st.session_state.client_id = ''
+    explication_text = afficher_menu_client()
+    st.markdown(explication_text, unsafe_allow_html=True)
 
 if 'message' not in st.session_state:
     st.session_state.message = ''
 
-if not st.session_state.client_id:
-    # Message d'information initial
-    st.info(
-        "Veuillez saisir un numéro de client dans la barre latérale à gauche et appuyer sur 'Obtenir la prédiction' pour commencer.")
+
 
 def update_state(key, value):
     st.session_state[key] = value
@@ -243,7 +242,7 @@ if option_1:
                 "CODE_GENDER": "Genre",
                 "CNT_CHILDREN": "Nombre d'Enfants",
                 "AMT_INCOME_TOTAL": "Revenu Total",
-                "DAYS_BIRTH": "Âge (jours)",
+                "DAYS_BIRTH": "Âge (Année)",
                 "DAYS_EMPLOYED": "Emploi (jours)",
                 "EXT_SOURCE_3": "Source Externe 3",
                 "EXT_SOURCE_2": "Source Externe 2",
@@ -252,7 +251,7 @@ if option_1:
 
             columns_to_display = [
                 "ID Client", "Type de Contrat", "Genre",
-                "Nombre d'Enfants", "Revenu Total", "Âge (jours)", "Emploi (jours)"
+                "Nombre d'Enfants", "Revenu Total", "Âge (Année)", "Emploi (jours)"
             ]
 
             # Mise à jour des noms des colonnes dans le DataFrame pour l'affichage
@@ -586,7 +585,7 @@ if option_4:
 
 if option_5:
     if 'client_id' in st.session_state:
-        st.header('Comparaison avec les groupes clients')
+        st.header('Comparaison avec un groupes clients similaires')
         client_id = st.session_state.client_id
         client_id = int(client_id)
         message = st.session_state.message
@@ -614,7 +613,7 @@ if option_5:
             # Convertir les valeurs décimales en 0 ou 1 en fonction du seuil
             df_train['TARGET'] = df_train['TARGET'].apply(lambda x: 1 if x > seuil else 0)
 
-            st.info("Aperçu des données sur un groupe représentatif de 5 clients")
+            st.info("Aperçu des données sur un groupe de 5 clients similaires")
             st.dataframe(df_info.sample(5))
 
             features_select = [

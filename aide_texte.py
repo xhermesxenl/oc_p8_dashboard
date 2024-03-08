@@ -28,7 +28,7 @@ def aide_comparaison_impact() :
         .custom-info {
             font-size: 18px;  
             color: #000000; 
-            background-color: #ADD8E6; 
+            background-color: #e8f2fc; 
             padding: 10px; 
             border-radius: 5px; 
         }
@@ -50,7 +50,7 @@ def aide_comparaison_bi(a,b) :
                 .custom-info {{
                     font-size: 18px;  
                     color: #000000; 
-                    background-color: #ADD8E6; 
+                    background-color: #e8f2fc; 
                     padding: 10px; 
                     border-radius: 5px; 
                 }}
@@ -72,7 +72,7 @@ def afficher_infos_local():
                 .custom-info-global {{
                 font-size: 18px;
                 color: #000000; 
-                background-color: #ADD8E6; 
+                background-color: #e8f2fc; 
                 padding: 10px;
                 border-radius: 5px;
                 }}
@@ -90,7 +90,7 @@ def afficher_infos_global():
                 .custom-info-global {{
                     font-size: 18px;
                 color: #000000; 
-                background-color: #ADD8E6; 
+                background-color: #e8f2fc; 
                 padding: 10px;
                 border-radius: 5px;
                 }}
@@ -107,27 +107,63 @@ def afficher_infos_global():
 ##############################################
 def afficher_infos_client():
     explication_text = f"""
-        <div style="background-color:lightblue; padding:10px; border-radius:10px">
+        <div style="background-color:#e8f2fc; padding:10px; border-radius:10px">
         <h2>Informations Client</h2>
     
-        <p><strong>SK_ID_CURR</strong>: Identifiant unique du client. Sert de clé primaire pour identifier les enregistrements de clients de manière unique.</p>
+        <p><strong>Id Client</strong>: Identifiant unique du client. Sert de clé primaire pour identifier les enregistrements de clients de manière unique.</p>
     
-        <p><strong>NAME_CONTRACT_TYPE</strong>: Type de contrat de crédit. Indique le type de prêt contracté par le client, par exemple, prêt à la consommation ou prêt immobilier.</p>
+        <p><strong>Type de Contrat</strong>: Type de contrat de crédit. Indique le type de prêt contracté par le client, par exemple, prêt à la consommation ou prêt immobilier.</p>
     
-        <p><strong>CODE_GENDER</strong>: Genre du client. Le sexe du client, généralement indiqué par 'M' pour masculin et 'F' pour féminin.</p>
+        <p><strong>Genre</strong>: Genre du client. Le sexe du client, généralement indiqué par 'M' pour masculin et 'F' pour féminin.</p>
     
-        <p><strong>CNT_CHILDREN</strong>: Nombre d'enfants. Le nombre total d'enfants que le client a.</p>
+        <p><strong>Nombre d'Enfants</strong>: Nombre d'enfants. Le nombre total d'enfants que le client a.</p>
     
-        <p><strong>AMT_INCOME_TOTAL</strong>: Revenu total annuel. Le revenu annuel total du client.</p>
+        <p><strong>Revenu Total , AMT_INCOME_TOTAL</strong>: Revenu total annuel. Le revenu annuel total du client.</p>
     
-        <p><strong>DAYS_BIRTH</strong>: Âge du client (en jours). L'âge du client, calculé en jours à partir de la date de naissance jusqu'à la date de la demande de prêt.</p>
+        <p><strong>Âge (année)</strong>: Âge du client (année). L'âge du client, calculé en jours à partir de la date de naissance jusqu'à la date de la demande de prêt.</p>
     
-        <p><strong>DAYS_EMPLOYED</strong>: Durée de l'emploi (en jours). Le nombre de jours depuis le début de l'emploi actuel du client.</p>
+        <p><strong>Emploi (jours)</strong>: Durée de l'emploi (en jours). Le nombre de jours depuis le début de l'emploi actuel du client.</p>
     
         <p><strong>EXT_SOURCE_1, EXT_SOURCE_2, EXT_SOURCE_3</strong>: Ces trois variables représentent des scores provenant de sources extérieures. Les scores sont typiquement issus d'agences de crédit ou d'autres sources de données externes évaluant la solvabilité du client. Chaque source pourrait avoir sa propre méthodologie de calcul, mais en général, ces scores tentent de prédire la probabilité de défaut de paiement du client. Un score plus élevé indique généralement un risque de défaut plus faible.</p>
     
         <p><strong>AMT_CREDIT</strong>: Montant du crédit. Il s'agit du montant total du prêt que le client demande. Cette valeur représente la somme d'argent que le client souhaite emprunter.</p>
     
+        </div>
+        """
+
+    return  explication_text
+
+##############################################
+###         Aide Menu                      ###
+##############################################
+def afficher_menu_client():
+
+
+    explication_text = f"""
+        <br />
+        <br />
+        <div style="background-color:#fffce7; padding:10px; border-radius:10px">
+            <h5>
+            Veuillez saisir un numéro de client dans la barre latérale à gauche et appuyer sur 'Obtenir la prédiction' pour commencer.</h5>
+        </div>
+        <br />
+        <hr />
+        <br />
+        <div style="background-color:#e8f2fc; padding:10px; border-radius:10px">
+        <h4>Les fonctionnalités du menu</h4>
+    
+        <p><strong>Informations descriptives du client</strong>: Affiche les informations de base du client telles que le nom, l'âge, et le genre. </p>
+    
+        <p><strong>Facteurs d'influence locaux</strong>: Montre comment les caractéristiques individuelles du client influencent la prédiction. </p>
+        <p><strong>Facteurs d'influence globaux</strong>: Révèle les tendances générales des caractéristiques qui affectent les décisions de prêt.</p>
+    
+        <p><strong>Comparaison aves l'ensemble des Clients</strong>: Permet de comparer les informations du client par rapport à l'ensemble de la base client.</p>
+    
+        <p><strong>Comparaison aves un groupe de clients similaires</strong>: Compare le client à un groupe de clients ayant des profils similaires pour un benchmarking ciblé.</p>
+    
+        <p><strong>" Descriptions des caractéristiques</strong>: Fournit des explications détaillées sur les caractéristiques utilisées dans le modèle.</p>
+    
+
         </div>
         """
 
