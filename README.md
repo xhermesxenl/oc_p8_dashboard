@@ -1,4 +1,4 @@
-# Streamlit Dashboard for Credit Scoring
+# Dashboard interactif
 
 ## Description
 
