@@ -4,6 +4,8 @@
 
 Ce projet développe un tableau de bord Streamlit pour un outil de scoring de crédit conçu par 'Prêt à dépenser'. Le tableau de bord fournit une interface intuitive pour interagir avec l'API de scoring de crédit, permettant aux utilisateurs de tester et de visualiser les performances et les résultats du modèle de scoring.
 
+Dépôt git du  projet API : https://github.com/xhermesxenl/oc_p8_api.git
+
 ## Installation
 Pour installer et exécuter le tableau de bord Streamlit localement, suivez ces étapes :
 
