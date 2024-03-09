@@ -255,7 +255,7 @@ if option_1:
 
             columns_to_display = [
                 "ID Client", "Type de Contrat", "Genre",
-                "Nombre d'Enfants", "Revenu Total", "Âge (Année)", "Emploi (jours)"
+                "Nombre d'Enfants", "Revenu Total", "Âge (Année)", "Montant du Crédit"
             ]
 
             # Mise à jour des noms des colonnes dans le DataFrame pour l'affichage
